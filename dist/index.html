@@ -1,0 +1,32 @@
+<!doctype html><html lang="ko"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="논리 게이트를 연결하고 진리표로 검증하는 브라우저 회로 작업대. 램프, 다수결, 1비트 덧셈기를 만들어 보세요.">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>LOGIC FOUNDRY — 논리회로 작업대</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2315241e'/%3E%3Cpath d='M7 8h10a8 8 0 010 16H7z' fill='none' stroke='%23b8ee85' stroke-width='3'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="styles.css"><script type="module" src="src/app.js"></script></head>
+<body><header><a class="brand" href="./">LOGIC <b>FOUNDRY</b></a><nav aria-label="사이트 링크"><a href="https://hyungminyoon1.github.io/web-lab/">WEB LAB ↗</a><a href="https://github.com/HyungminYoon1/logic-foundry" target="_blank" rel="noopener noreferrer">소스 ↗</a></nav></header>
+<main>
+<div class="title"><div><p class="eyebrow">DIGITAL CIRCUIT WORKBENCH</p><h1>0과 1을 연결하는 작업대.</h1></div><label for="mission">도전 과제<select id="mission"><option value="difference">01 · 서로 다를 때 켜지는 램프</option><option value="majority">02 · 세 명의 다수결</option><option value="adder">03 · 1비트 덧셈기</option><option value="access">04 · 입장 조건 만들기</option></select></label></div>
+<section class="mission-strip"><div><h2 id="missionName"></h2><p id="missionDescription"></p></div><div class="score"><strong id="score">0 / 4</strong><span>입력 조합 통과</span></div></section>
+<div class="desk">
+<section class="workbench" aria-labelledby="benchTitle"><div class="bench-heading"><h2 id="benchTitle">회로도</h2><span class="signal-legend"><i></i>0 <i></i>1</span></div>
+<div id="inputSwitches" class="switches" aria-label="입력 스위치"></div>
+<div class="diagram-scroll"><svg id="circuit" viewBox="0 0 900 360" role="img" aria-label="현재 논리회로와 신호 흐름"></svg></div>
+<div id="lamps" class="lamps" aria-live="polite"></div><p class="bench-hint">녹색 선은 1, 회색 선은 0입니다. 스위치를 누르면 결과가 즉시 바뀝니다.</p>
+<div class="table-heading"><h2>모든 입력으로 검증하기</h2><button id="verify">진리표 검증</button></div>
+<div class="table-wrap"><table><caption class="sr-only">입력 조합별 목표 값과 현재 회로의 출력</caption><thead id="truthHead"></thead><tbody id="truthBody"></tbody></table></div>
+</section>
+<aside class="editor" aria-labelledby="editorTitle"><p class="eyebrow">GATE EDITOR</p><h2 id="editorTitle">회로 조립</h2>
+<div id="gateList" class="gate-list" aria-label="게이트 선택"></div>
+<label for="gateType">게이트 종류<select id="gateType"></select></label>
+<label for="sourceA">첫 번째 입력<select id="sourceA"></select></label>
+<label for="sourceB">두 번째 입력<select id="sourceB"></select></label>
+<p id="gateMeaning" class="explain"></p>
+<div class="actions"><button id="addGate">+ 게이트 추가</button><button id="removeGate">선택 삭제</button></div>
+<div id="outputEditor"></div>
+<p class="hint">연결 목록에서 입력 또는 앞쪽 게이트를 선택하세요. 최대 12개, 순환 연결 없이 조립합니다.</p>
+<div class="actions"><button id="reset">초기 회로</button><button id="example">예시 회로</button></div>
+<p id="status" role="status">첫 게이트를 XOR로 바꾸면 어떤 일이 일어날까요?</p>
+<details><summary>게이트 빠른 안내</summary><p>AND: 둘 다 1 · OR: 하나라도 1 · XOR: 서로 다름 · NOT: 반대로. NAND·NOR·XNOR는 각각의 결과를 뒤집습니다.</p><a href="https://docs.circuitverse.org/" target="_blank" rel="noopener noreferrer">논리회로 더 알아보기 ↗</a></details>
+</aside></div>
+</main><footer>LOGIC FOUNDRY / 회로의 정답은 모양이 아니라, 모든 입력에 대한 결과입니다.</footer></body></html>
