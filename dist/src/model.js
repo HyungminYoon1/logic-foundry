@@ -1,5 +1,5 @@
 export const TYPES = Object.freeze(["AND", "OR", "XOR", "NOT", "NAND", "NOR", "XNOR"]);
-export const LIMITS = Object.freeze({gates:32, inputs:7, outputs:4, rows:128});
+export const LIMITS = Object.freeze({gates:24, inputs:7, outputs:4, rows:128});
 const word = (input, prefix, count) => Array.from({length:count}, (_, i) => input[prefix+i] * 2**i).reduce((a,b) => a+b, 0);
 const bits = (value, count) => Array.from({length:count}, (_, i) => (value >> i) & 1);
 function mission(data) {

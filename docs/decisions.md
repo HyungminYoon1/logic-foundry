@@ -1,5 +1,7 @@
 # Decisions
 
+Historical decisions below describe their original boundaries. D08/D09 explicitly supersede the memory-only portions of D02/D05; other campaign and DAG rules remain in force.
+
 ## D01 — Static, independent implementation
 
 - Context: the user approved implementing all six proposed services and adding them to WEB LAB.
@@ -62,3 +64,32 @@
 - Rationale: 넘침의 실제 원인에만 적용되는 한 속성 수정입니다. 점수 가독성, 데스크톱 배치, 계산 모델과 UI 동작에 영향이 없습니다.
 - Affected: dist/styles.css, docs/verification.md.
 - Review: 별도 로컬 브라우저에서 13개 예시 × 320/390/1440px의 39개 상태를 검사해 문서 가로 넘침 없음, 점수 내부 넘침 없음, 모바일 큰 회로의 내부 스크롤을 확인했습니다. 메인의 현재 Playwright 세션은 사용하지 않았습니다. 메인 QA 스크립트 재실행은 별도입니다.
+
+## D08 — 제한된 회로 파일·기기 저장·편집 되돌리기 / 2026-10-09
+
+- Context: 사용자가 회로 가져오기/내보내기, 명시적 저장/불러오기/삭제, 최대 32회 되돌리기와 제한된 로컬 저장을 승인했습니다.
+- Options: 메모리만 유지; 계정/서버 동기화; 버전이 있는 정확한 JSON 스키마와 기기 저장 경계.
+- Decision: `records.js` 순수 코덱과 `storage.js` 저장 경계를 분리합니다. 회로 JSON은 16 KiB와 `{version:1,mission,circuit}`만 허용합니다. 가져온 회로는 항상 연습이며 solved/assisted 등 여분 필드는 거절합니다. 기기 키 `logic-foundry-state-v1`는 최대 128 KiB, 13개 초안과 13개 실제 독립 완료 회로를 저장합니다. 완료는 검증 버튼의 전수 통과와 저장 성공 뒤 기록하며 복원할 때 다시 전수 검사합니다. 13개 과제와 7입력/4출력/128행은 유지하고 전역 게이트 상한은 현재 최대인 24로 맞춥니다. NOT 비활성 입력도 앞쪽 참조여야 합니다. 힌트 규칙은 유지합니다. 과제별 최대 32개 편집 스냅샷은 메모리에만 있고 연습 상태까지 복구합니다.
+- Rationale: 평가와 저장·DOM의 분리를 유지하고, 외부 파일의 완료 주장이나 순환/전방 참조를 신뢰하지 않습니다. 유효한 파일도 직접 해결 증거로 삼지 않습니다. 새 저장을 화면에서 설명하고 삭제 버튼을 제공합니다.
+- Schema/retention: 초안 `{circuit,inputs,hintCount,assisted}`, 완료 `{[mission]:circuit}`. 기기 삭제나 명시적 삭제까지 유지, 만료/서버/자동 동기화 없음. 초기 편집기는 초기 회로이며 저장 불러오기는 수동입니다. 삭제는 저장 기록만 제거하고 현재 편집기와 내려받은 파일은 남깁니다. 손상/버전 불일치/차단/용량 부족은 실패로 알리고 기존 데이터를 덮어쓰지 않습니다.
+- Affected: dist/src/model.js, records.js, history.js, storage.js, app.js, dist/index.html, dist/styles.css, test/records.test.js, test/ui.test.js, architecture.md, README.md.
+- Review: 브라우저는 메인이 파일 다운로드/선택, 새로고침/불러오기, 320px 파일 입력 폭, 키보드, 긴 회로 스크롤을 확인합니다. 기기 저장은 사용자가 수정 가능한 학습 기록이고 인증이 아닙니다. 여러 탭은 마지막 쓰기가 우선하며 트랜잭션 보장은 없습니다.
+
+## D09 — 갤러리의 최소 완료 요약 / 2026-10-09
+
+- Context: 사용자가 모든 앱의 공통 `web-lab-progress-v1` 계약을 승인하고 이 저장소만 수정하도록 지정했습니다.
+- Options: 갤러리에서 개인 회로 읽기; 초기 방문/예시를 완료로 표시; 실제 지속되는 독립 완료 개수만 요약.
+- Decision: `progress.js`는 정확한 `{version:1,apps:{[repoId]:{completed,total,updatedAt}}}`만 읽고 씁니다. 15개 ID는 data-mirage, echo-vault, light-route, logic-foundry, neon-tactics, orbit-courier, packet-journey, parcel-panic, pixel-kitchen, pocket-city, route-race, sense-lab, swarm-garden, think-forge, traffic-lab입니다. 전체 8 KiB, 정수 `0<=completed<=total<=1000`, 실제 쓰기 이벤트의 표준 UTC ISO 시각을 검증합니다. 독립 전수 통과 회로를 앱 저장소에 성공적으로 쓴 후 검증된 완료 회로 수/13만 갱신합니다. 초기 화면·힌트·예시·가져오기·초안 저장은 요약을 쓰지 않습니다. 삭제는 own 항목만 제거합니다.
+- Rationale: 회로/입력/행동/파일/사용자 정보 없이 갤러리 배지를 표시하고 다른 앱의 유효한 요약과 개인 키를 보존합니다. 공개 순위·백엔드는 추가하지 않습니다.
+- Schema/retention: 앱별 현재 집계만 보관하며 초기 날짜를 만들어 넣지 않습니다. 앱 삭제 또는 브라우저 저장소 삭제까지 유지합니다. 잘못된 공통 데이터는 덮어쓰거나 부분 정리하지 않고 실패합니다. 앱 기록 저장 뒤 요약 저장 실패는 별도로 알립니다.
+- Affected: dist/src/progress.js, storage.js, app.js, test/records.test.js, test/ui.test.js, architecture.md, README.md.
+- Review: 갤러리/다른 저장소는 수정하지 않습니다. 동일 origin 아래에서 공유하며 다른 localhost 포트는 공유하지 않습니다. 마지막 쓰기가 우선하며 두 키의 원자성은 보장하지 않습니다. 실패 후 요약은 다음 실제 검증/삭제까지 오래된 값일 수 있습니다. 메인이 허용 ID 복사본과 실제 갤러리 동작을 검증합니다.
+
+## D10 — 짧은 조작 문구와 연결된 신호 선택 / 2026-10-09
+
+- Context: 사용자가 설명의 반복·홍보성 문구를 줄이고 유용한 배선 제어를 유지하도록 요청했습니다.
+- Options: 설명 추가; 제어/상태/목표와 필수 저장 안내만 유지.
+- Decision: 제목·과제 선택·진리표·힌트·상태를 간결하게 표시하고 선택한 게이트 ID와 연결된 입력 신호 링크를 제공합니다. 신호 링크는 이전 게이트 편집 또는 입력 스위치에 키보드 초점을 이동합니다. 실제 반례의 입력/목표/현재 값, 과제별 목표, 패리티 한계, 조합논리 한계, 출처 링크와 기기 저장 안내는 유지합니다.
+- Rationale: 조작 위치와 실제 계산 결과를 읽기 쉽게 합니다.
+- Affected: dist/src/app.js, dist/index.html, dist/styles.css.
+- Review: 레이아웃/포커스/모바일 실검사와 캡처는 메인이 수행합니다.

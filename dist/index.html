@@ -6,31 +6,41 @@
 <link rel="stylesheet" href="styles.css"><script type="module" src="src/app.js"></script></head>
 <body><header><a class="brand" href="./">LOGIC <b>FOUNDRY</b></a><nav aria-label="사이트 링크"><a href="https://hyungminyoon1.github.io/web-lab/">WEB LAB ↗</a><a href="https://github.com/HyungminYoon1/logic-foundry" target="_blank" rel="noopener noreferrer">소스 ↗</a></nav></header>
 <main>
-<div class="title"><div><p class="eyebrow">DIGITAL CIRCUIT WORKBENCH</p><h1>0과 1을 연결하는 작업대.</h1><p id="progress" class="hint"></p></div><label for="mission">입문부터 제약 도전까지 · 과제 자유 선택<select id="mission"></select></label></div>
+<div class="title"><div><h1>논리회로 작업대</h1><p id="progress" class="hint"></p></div><label for="mission">과제<select id="mission"></select></label></div>
 <section class="mission-strip"><div><h2 id="missionName"></h2><p id="missionDescription"></p><p id="missionIO"></p><p id="gateBudget"></p></div><div class="score"><strong id="score">0 / 4</strong><span>입력 조합 통과</span></div></section>
 <div class="desk">
 <section class="workbench" aria-labelledby="benchTitle"><div class="bench-heading"><h2 id="benchTitle">회로도</h2><span class="signal-legend"><i></i>0 <i></i>1</span></div>
 <div id="inputSwitches" class="switches" aria-label="입력 스위치"></div>
 <div class="diagram-scroll"><svg id="circuit" viewBox="0 0 900 360" role="group" aria-label="현재 논리회로와 신호 흐름. 게이트를 선택해 편집할 수 있습니다."></svg></div>
-<div id="lamps" class="lamps" aria-live="polite"></div><p class="bench-hint">녹색 선은 1, 회색 선은 0입니다. 게이트를 클릭하거나 Tab·Enter로 선택해 편집하세요.<br>배선은 아래 입력 연결 목록에서 지정합니다. 큰 회로는 회로도 안에서 가로·세로로 스크롤합니다.</p>
-<section class="vectors" aria-labelledby="vectorsTitle"><h2 id="vectorsTitle">핵심 입력 사례</h2><p class="hint">사례를 누르면 스위치에 적용됩니다. 올림 전파·선택 억제 같은 경계 조건을 살펴보세요.</p><div id="vectorList"></div></section>
-<div class="table-heading"><h2>모든 입력으로 검증하기</h2><button id="verify">진리표 검증</button></div>
+<div id="lamps" class="lamps" aria-live="polite"></div><p class="bench-hint">게이트 선택 → 입력 연결 변경 · Tab·Enter로 선택 · 큰 회로는 내부 스크롤</p>
+<section class="vectors" aria-labelledby="vectorsTitle"><h2 id="vectorsTitle">입력 사례</h2><p class="hint">누르면 스위치에 적용됩니다.</p><div id="vectorList"></div></section>
+<div class="table-heading"><h2>진리표</h2><button id="verify">진리표 검증</button></div>
 <p id="truthOrder" class="hint"></p><div class="table-controls"><label><input id="onlyFailures" type="checkbox"> 불일치만 보기</label><button id="counterexample">첫 반례 적용</button><span id="tableSummary"></span></div>
 <div class="table-wrap"><table><caption class="sr-only">입력 조합별 목표 값과 현재 회로의 출력</caption><thead id="truthHead"></thead><tbody id="truthBody"></tbody></table></div>
 </section>
-<aside class="editor" aria-labelledby="editorTitle"><p class="eyebrow">GATE EDITOR</p><h2 id="editorTitle">회로 조립</h2>
+<aside class="editor" aria-labelledby="editorTitle"><h2 id="editorTitle">회로 편집</h2>
 <div id="gateList" class="gate-list" aria-label="게이트 선택"></div>
+<p id="selectedGate" class="hint"></p>
 <label for="gateType">게이트 종류<select id="gateType"></select></label>
 <label for="sourceA">첫 번째 입력<select id="sourceA"></select></label>
 <label for="sourceB">두 번째 입력<select id="sourceB"></select></label>
 <p id="gateMeaning" class="explain"></p>
+<div id="sourceLinks" class="source-links" aria-label="연결된 입력 신호"></div>
 <div class="actions"><button id="addGate">+ 게이트 추가</button><button id="removeGate">선택 삭제</button></div>
+<button id="undo" class="next-mission">편집 되돌리기</button>
 <div id="outputEditor"></div>
 <p id="wiringRule" class="hint"></p>
-<section class="mission-hints" aria-labelledby="hintsTitle"><h2 id="hintsTitle">분해하며 풀기</h2><p class="hint">힌트는 개념부터 연결식 순서로 공개됩니다. 간결화 목표는 선택 도전입니다.</p><button id="showHint">다음 힌트</button><ol id="hintList"></ol></section>
+<section class="mission-hints" aria-labelledby="hintsTitle"><h2 id="hintsTitle">힌트</h2><button id="showHint">다음 힌트</button><ol id="hintList"></ol></section>
 <div class="actions"><button id="reset">초기 회로</button><button id="example">예시 회로</button></div>
 <button id="nextMission" class="next-mission">다음 과제 →</button>
-<p id="status" role="status">첫 게이트를 XOR로 바꾸면 어떤 일이 일어날까요?</p>
+<p id="status" role="status">게이트를 선택하고 입력을 연결하세요.</p>
+<section class="local-data" aria-labelledby="localTitle"><h2 id="localTitle">회로 보관</h2>
+<div class="actions"><button id="saveLocal">기기에 저장</button><button id="loadLocal">저장 불러오기</button></div>
+<button id="exportCircuit" class="next-mission">JSON 내보내기</button>
+<label for="importCircuit">JSON 가져오기 (최대 16 KiB)<input id="importCircuit" type="file" accept=".json,application/json"></label>
+<p class="hint">회로·직접 해결은 기기에 보관합니다. 갤러리에는 완료 수·과제 수·갱신 시각만 공유합니다. 예시·가져온 회로는 연습입니다.</p>
+<button id="eraseLocal" class="next-mission">저장 회로·완료 기록 삭제</button>
+</section>
 <details><summary>게이트 빠른 안내</summary><p>AND: 둘 다 1 · OR: 하나라도 1 · XOR: 서로 다름 · NOT: 반대로. NAND·NOR·XNOR는 각각의 결과를 뒤집습니다.</p><a href="https://docs.circuitverse.org/" target="_blank" rel="noopener noreferrer">논리회로 더 알아보기 ↗</a></details>
 </aside></div>
-</main><footer>LOGIC FOUNDRY / 회로의 정답은 모양이 아니라, 모든 입력에 대한 결과입니다.</footer></body></html>
+</main><footer>조합논리 · 클록·지연 없음 · 간결화 목표는 최소 게이트 수가 아닙니다.</footer></body></html>
