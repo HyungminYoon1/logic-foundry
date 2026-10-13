@@ -9,9 +9,25 @@ let mission="difference",circuit=initial(),selected="G1",inputs={A:0,B:1},hintCo
 const drafts=new Map(),solved=new Set(Object.keys(readState().state.achievements)),missionKeys=Object.keys(missions),histories=new Map();
 function history(){if(!histories.has(mission))histories.set(mission,createHistory());return histories.get(mission);}
 function snapshot(){return {circuit:structuredClone(circuit),inputs:{...inputs},hintCount,assisted};}
+function startingInputs(key){return Object.fromEntries(missions[key].inputs.map(k=>[k,key==="difference"&&k==="B"?1:0]));}
 function restore(next){circuit=structuredClone(next.circuit);inputs={...next.inputs};hintCount=next.hintCount;assisted=next.assisted;if(!circuit.gates.some(g=>g.id===selected))selected=circuit.gates[0]?.id??null;}
 function install(key,next){copyDraft(next,key);if(key!==mission)changeMission(key);history().push(snapshot());restore(next);render();}
 const meanings={AND:"두 입력이 모두 1일 때만 1입니다.",OR:"한 입력이라도 1이면 1입니다.",XOR:"두 입력이 서로 다를 때만 1입니다.",NOT:"입력의 0과 1을 뒤집습니다.",NAND:"AND의 결과를 뒤집습니다.",NOR:"OR의 결과를 뒤집습니다.",XNOR:"두 입력이 같을 때만 1입니다."};
+const investigations={
+  difference:"XOR를 OR로 바꾸면 어떤 입력에서만 틀릴까요? 검증 전에 한 반례를 적고, 첫 반례를 적용해 두 게이트의 차이를 확인하세요. 편집 되돌리기로 회로를 복구하세요.",
+  adder:"SUM과 CARRY 출력을 서로 바꿔 보세요. 0+0만 확인하면 이 실수를 찾을 수 있을까요? 반례의 두 출력이 각각 합의 어느 자리인지 설명하고 연결을 복구하세요.",
+  majority:"찬성 두 명의 쌍 중 하나를 회로에서 빼 보세요. 빠진 쌍만 찬성하는 입력과 세 명 모두 찬성하는 입력을 비교하세요. 모든 입력에서 같은 결과를 내는 더 작은 회로도 찾아보세요.",
+  access:"관리자 예외를 티켓 조건 바깥에 OR로 연결하면 티켓 없는 관리자도 들어갑니다. 올바른 회로와 이 회로를 구분하는 입력을 먼저 고른 뒤 전체 진리표로 확인하세요.",
+  fullAdder:"Cin을 상수 0으로 바꾼 회로에서 실패하는 입력을 예측하세요. Cin=0인 사례만으로는 왜 이 배선 실수를 발견할 수 없는지 설명하고 올림 경로를 복구하세요.",
+  adder3:"7+0+1 사례에서 낮은 자리부터 올림 신호를 추적하세요. 중간 올림 하나를 0으로 연결하면 어느 출력부터 틀릴지 예측한 뒤 검증하세요. 이 회로는 전파 시간을 계산하지 않습니다.",
+  alu2:"0−1과 3+1의 두 비트 결과는 각각 3과 0으로 순환합니다. FLAG가 빌림과 올림을 각각 뜻하는 이유를 마지막 올림 신호와 M으로 설명하세요. 모드만 뒤집어 같은 A·B를 비교하세요.",
+  parity:"데이터 0000·P=0에서 데이터 한 비트만 바꾼 뒤 두 비트를 바꿔 보세요. ERROR가 두 비트 변경을 놓치는 반례를 직접 만들고, ERROR=0이 원본 데이터 보장을 뜻하지 않는 이유를 설명하세요.",
+  decoder:"EN=0으로 두고 주소만 바꾸면 네 출력은 모두 0이어야 합니다. EN 연결 하나를 빼고 실패하는 주소를 찾으세요. EN=1에서 두 출력이 동시에 켜지는 회로도 거절되는지 확인하세요.",
+  mux4:"채널 2를 선택하고 D2는 고정한 채 D0·D1·D3를 바꿔 보세요. OUT이 달라지면 잘못된 배선입니다. 선택선 S0·S1을 뒤바꾼 회로를 구분하는 입력도 찾아보세요.",
+  comparator:"높은 비트가 다를 때 낮은 비트를 바꿔도 GT·LT는 그대로여야 합니다. 두 수를 서로 바꾸면 GT와 LT는 교환되고 EQ는 유지됩니다. 두 관계를 깨뜨리는 배선을 찾아 복구하세요.",
+  priority:"R3=1을 유지한 채 낮은 요청을 모두 바꿔 보세요. GRANT3만 켜져야 합니다. 그 다음 R3=0·R2=1로 같은 실험을 하며 낮은 요청을 차단하는 신호를 추적하세요.",
+  nandMux:"NAND 두 입력에 같은 신호를 연결하면 NOT이 됩니다. 선택선 반전을 두 경로가 공유하게 만든 뒤, S=0·1에서 선택되지 않은 입력을 바꿔도 OUT이 유지되는지 확인하세요.",
+};
 function el(tag,text,attrs={}){const node=document.createElement(tag);if(text!==undefined)node.textContent=text;for(const [k,v]of Object.entries(attrs))node.setAttribute(k,v);return node;}
 function svg(tag,attrs,text){const node=document.createElementNS(NS,tag);for(const [k,v]of Object.entries(attrs))node.setAttribute(k,v);if(text!==undefined)node.textContent=text;$("#circuit").append(node);return node;}
 function options(select,refs,value){select.replaceChildren(...refs.map(ref=>el("option",ref,{value:ref})));select.value=value;}
@@ -47,6 +63,7 @@ function render(){
   const m=missions[mission],live=evaluate(circuit,inputs,mission),rows=truthTable(circuit,mission),passed=rows.filter(r=>r.correct).length;
   $("#mission").replaceChildren(...missionKeys.map((key,i)=>el("option",String(i+1).padStart(2,"0")+" · "+missions[key].level+" · "+missions[key].name+(solved.has(key)?" ✓":""),{value:key})));$("#mission").value=mission;
   $("#missionName").textContent=m.name;$("#missionDescription").textContent=m.description;$("#missionIO").textContent=m.io;$("#score").textContent=passed+" / "+rows.length;
+  $("#investigation").textContent=investigations[mission];
   $("#progress").textContent="저장된 직접 해결 "+solved.size+" / "+missionKeys.length;
   $("#gateBudget").textContent=circuit.gates.length+" / "+m.gateLimit+"개 게이트 · 목표 ≤ "+m.targetGates+"개 · "+(assisted?"연습":"직접 도전");
   $("#undo").disabled=history().size===0;$("#undo").textContent="편집 되돌리기 ("+history().size+")";
@@ -94,12 +111,12 @@ $("#mission").addEventListener("change",e=>changeMission(e.target.value));
 for(const [id,key]of [["gateType","type"],["sourceA","a"],["sourceB","b"]])$("#"+id).addEventListener("change",e=>updateGate(selected,{[key]:e.target.value}));
 $("#addGate").addEventListener("click",()=>{const used=new Set(circuit.gates.map(g=>g.id));let i=1;while(used.has("G"+i))i++;const next=structuredClone(circuit),m=missions[mission];next.gates.push({id:"G"+i,type:m.allowedTypes[0],a:m.inputs[0],b:m.inputs[1]});commit(next);selectGate("G"+i);});
 $("#removeGate").addEventListener("click",()=>{const next=structuredClone(circuit),removed=selected;next.gates=next.gates.filter(g=>g.id!==removed);for(const g of next.gates){if(g.a===removed)g.a="0";if(g.b===removed)g.b="0";}next.outputs=next.outputs.map(v=>v===removed?"0":v);commit(next);$("#status").textContent="게이트를 삭제했습니다. 해당 연결은 상수 0으로 바뀝니다.";});
-$("#reset").addEventListener("click",()=>{commit(initial(mission),{hintCount:0,assisted:false});selected="G1";render();$("#status").textContent="초기 회로 · 직접 도전";});
+$("#reset").addEventListener("click",()=>{commit(initial(mission),{hintCount:0,assisted:false,inputs:startingInputs(mission)});selected="G1";render();$("#status").textContent="초기 회로·입력 · 직접 도전";});
 $("#example").addEventListener("click",()=>{commit(example(mission),{assisted:true});selected="G1";render();$("#status").textContent="예시 회로 · 연습";});
 $("#undo").addEventListener("click",()=>{const previous=history().undo();if(previous){restore(previous);render();$("#status").textContent="편집을 되돌렸습니다.";}});
 $("#saveLocal").addEventListener("click",()=>{const stored=readState();if(stored.ok){stored.state.drafts[mission]=copyDraft(snapshot(),mission);if(writeState(stored.state)){$("#status").textContent="이 과제의 회로를 기기에 저장했습니다.";return;}}$("#status").textContent="저장 불가 · 브라우저 저장 설정이나 저장 데이터를 확인하세요.";});
 $("#loadLocal").addEventListener("click",()=>{const stored=readState();if(!stored.ok){$("#status").textContent="저장 데이터를 읽을 수 없습니다.";return;}const saved=stored.state.drafts[mission];if(!saved){$("#status").textContent="이 과제의 저장 회로가 없습니다.";return;}install(mission,saved);$("#status").textContent="저장 회로를 불러왔습니다.";});
-$("#eraseLocal").addEventListener("click",()=>{const erased=eraseState();if(erased)solved.clear();const cleared=clearProgress();render();$("#status").textContent=erased&&cleared?"저장 회로·완료 기록·갤러리 요약을 삭제했습니다.":"삭제 미완료 · 브라우저 저장 설정을 확인하세요.";});
+$("#eraseLocal").addEventListener("click",()=>{const erased=eraseState();if(erased)solved.clear();const cleared=erased&&clearProgress();render();$("#status").textContent=erased&&cleared?"저장 회로·완료 기록·갤러리 요약을 삭제했습니다.":"삭제 미완료 · 브라우저 저장 설정을 확인하세요.";});
 $("#exportCircuit").addEventListener("click",()=>{const text=exportCircuit(mission,circuit),url=URL.createObjectURL(new Blob([text],{type:"application/json"})),a=el("a",undefined,{href:url,download:"logic-foundry-"+mission+".json"});a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);$("#status").textContent="회로 JSON을 내보냈습니다.";});
 $("#importCircuit").addEventListener("change",async e=>{const file=e.target.files?.[0];if(!file)return;try{if(e.target.files.length!==1||file.size>FILE_BYTES)throw new TypeError("File limit");const loaded=importCircuit(await file.text());install(loaded.mission,{circuit:loaded.circuit,inputs:Object.fromEntries(missions[loaded.mission].inputs.map(k=>[k,0])),hintCount:0,assisted:true});$("#status").textContent="가져온 회로 · 연습";}catch{$("#status").textContent="가져오기 실패 · JSON 형식·과제·배선·16 KiB 제한을 확인하세요.";}finally{e.target.value="";}});
 $("#verify").addEventListener("click",verifyMission);

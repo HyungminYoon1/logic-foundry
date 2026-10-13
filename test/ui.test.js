@@ -152,3 +152,29 @@ test("synthetic UI reload revalidates durable circuits without writing progress 
   localData.set(STATE_KEY,JSON.stringify(state));await import("../dist/src/app.js?reload-corrupt");
   assert.deepEqual(read().solved,[]);assert.equal(localData.get(PROGRESS_KEY),before);
 });
+
+test("reset restores the same circuit and input switches after vectors and manual changes",()=>{
+  for(const key of Object.keys(missions)){
+    selectMission(key);$("reset").fire("click");
+    const baseline=read();
+    $("vectorList").children[0].fire("click");
+    $("inputSwitches").children[0].fire("click");
+    $("reset").fire("click");
+    assert.deepEqual(read().inputs,baseline.inputs);
+    assert.deepEqual(read().circuit,initial(key));
+    const resetState=read();$("reset").fire("click");assert.deepEqual(read(),resetState);
+  }
+});
+
+test("failed private erase preserves the durable completion and its gallery summary",()=>{
+  localData.delete(STATE_KEY);
+  selectMission("difference");$("reset").fire("click");edit({id:"G1",type:"XOR"});$("verify").fire("click");
+  const before=localData.get(STATE_KEY),summary=localData.get(PROGRESS_KEY),solved=read().solved;
+  const remove=globalThis.localStorage.removeItem;
+  globalThis.localStorage.removeItem=key=>{if(key===STATE_KEY)throw Error("blocked");remove(key);};
+  try{$("eraseLocal").fire("click");}finally{globalThis.localStorage.removeItem=remove;}
+  assert.equal(localData.get(STATE_KEY),before);
+  assert.equal(localData.get(PROGRESS_KEY),summary);
+  assert.deepEqual(read().solved,solved);
+  assert.match($("status").textContent,/삭제 미완료/);
+});

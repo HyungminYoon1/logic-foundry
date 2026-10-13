@@ -1,5 +1,20 @@
 # Verification
 
+## 2026-10-13 — 초기화·삭제 실패 복구와 추적 과제 / LOCAL
+
+추가 화면 근거: 아래 QA 폴더의 `changed-guide-320.png`는 펼친 새 과제 부분의 원본 크기 캡처입니다(`capture.cjs`). 줄바꿈·잘림·320px 문서 폭을 확인했습니다. 확인한 격리 브라우저의 콘솔 오류·경고는 네 앱 모두0개입니다.
+
+- 소스: 저장소 목록·깨끗한 시작 상태, architecture.md, README.md, decisions/verification, gitattributes/gitignore/package, HTML/CSS·모든 src, model/ui 시험, check/serve 전체 확인(VERIFIED). records 시험은 목록·전체 실행으로 확인했으며 내용 전수 재감사는 하지 않았습니다(PARTIAL). api-spec.md/requirements.md/AGENTS.md 없음. 부모 목록만 확인(PARTIAL); 형제·갤러리·순위 서버 내용은 NOT_INSPECTED/NOT_MODIFIED.
+- 오류: (1) 초기 회로가 이전 입력 스위치를 유지하여 같은 시작 상태를 재현하지 못함. (2) private 삭제 차단 시 완료 회로는 남으나 own 요약은 사라짐. 두 실제 app 콜백 회귀 시험을 수정 전 13PASS/2FAIL, 수정 후15PASS로 확인했습니다.
+- 수정: 초기 회로와 입력 함께 복원(difference A0/B1, 나머지0); 실패한 private 삭제 뒤 summary 삭제 중단. 현재 편집·되돌리기·기존 완료·저장 계약 보존.
+- 개선:13과제별 반례·불변 관계·배선 신호 추적. XOR/OR 차이, 티켓 예외 범위, 중간 올림 제거, 가감산 FLAG, 패리티 두 비트 오류, EN·MUX·비교·중재·NAND 공유 신호. UI 변경 YES.
+- 파일: dist/index.html, dist/src/app.js, test/ui.test.js, README.md, docs/decisions.md, docs/verification.md.
+- 최종 로컬: `npm test`43/43, `npm run check` PASS, `git diff --check` PASS. 기존13해법·336행 전수·산술/패리티/MUX/디코더/비교/중재 불변식·엄격 파일·저장·32회 undo 시험 유지. model/codec/history/storage/progress 변경 없음.
+- 브라우저: 자기 loopback/격리 Playwright Chromium에서 초기 AND 실패→반례→직접 XOR4/4 저장, 초안 저장/불러오기, reset 입력·undo 회로 복구, 위조 solved JSON 원자적 거절, Storage.removeItem의 own 키만 일시 차단하여 private·summary 보존 확인. 모든13예시 전수 통과와13과제 입력reset 확인. 패리티 한 비트 ERROR1/두 비트 ERROR0, 7+0+1의0001 및128/128 확인.1440×1000/390×844/320×780에서 큰 회로 내부 스크롤과 과제 열림 상태 문서 가로 넘침 없음. 관찰한 pageerror0.
+- 캡처: 무시된 `tmp/output/playwright/qa-20261013/`의 `desktop-xor.png`, `adder3-1440.png`, `adder3-390.png`, `adder3-320.png`; desktop/mobile 육안 확인. `qa.cjs`; 선택자 `#reset`, `#inputSwitches`, `#eraseLocal`, `#investigation`. 큰 예시 캡처는 불일치 필터를 켜서 128/128와0개 실패행을 함께 보입니다.
+- 근거(2026-10-13 확인): [CircuitVerse Decoders & Plexers](https://docs.circuitverse.org/chapter4/chapter4-muxandplex/), [CircuitVerse MUX/DEMUX](https://learn.circuitverse.org/docs/comb-msi/mux-demux.html). 선택선·주소선·짝수 패리티의 뜻을 대조했습니다. 앱의 GRANT 출력은 우선순위 번호를 인코딩하는 회로가 아니라 가장 높은 요청 하나를 승인하는4출력입니다. 산술·짝수 오류·불변 관계는 독립 기대값 시험과 실제 스위치로 대조했습니다.
+- 한계: 전체 파일 다운로드/가져오기 정상 왕복·실제 터치·다른 엔진·스크린리더·동일 origin 갤러리 통합은 이번 브라우저 범위 밖. RESET 이후 입력도 초기화되는 UI 변경은 메인이 통합 검토합니다. REMOTE_CI/LIVE NOT_RUN. 커밋/푸시/배포/다른 에이전트/외부 서비스 추가 없음.
+
 ## Scope
 
 logic-foundry: model source and focused tests, static asset/syntax checks, browser interaction, remote workflow and public site are separate evidence levels. Existing unrelated services remain outside this change.
