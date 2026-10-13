@@ -1,5 +1,9 @@
 # Verification
 
+## 2026-10-13 — Systematic edge audit / LOCAL ONLY
+
+[Per-app inventory, boundary matrix, baseline additions and RED_GREEN evidence](edge-cases-20261013.md). 10 new Node tests; final 53/53, npm check and diff check PASS. Actual isolated muted Chrome primary/negative flows and 1440/390/320 views; repeatable tools/edge-browser.cjs retained (browser not in CI). Rules/storage contracts retained. Uncommitted; REMOTE_CI/LIVE NOT_RUN. Separate from the earlier maintenance below.
+
 ## 2026-10-13 — 초기화·삭제 실패 복구와 추적 과제 / LOCAL
 
 추가 화면 근거: 아래 QA 폴더의 `changed-guide-320.png`는 펼친 새 과제 부분의 원본 크기 캡처입니다(`capture.cjs`). 줄바꿈·잘림·320px 문서 폭을 확인했습니다. 확인한 격리 브라우저의 콘솔 오류·경고는 네 앱 모두0개입니다.

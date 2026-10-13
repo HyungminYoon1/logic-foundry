@@ -6,11 +6,12 @@ import {readState,writeState,eraseState} from "./storage.js";
 import {reportProgress,clearProgress} from "./progress.js";
 const $=s=>document.querySelector(s),NS="http://www.w3.org/2000/svg";
 let mission="difference",circuit=initial(),selected="G1",inputs={A:0,B:1},hintCount=0,assisted=false;
+let importRequest=0;
 const drafts=new Map(),solved=new Set(Object.keys(readState().state.achievements)),missionKeys=Object.keys(missions),histories=new Map();
 function history(){if(!histories.has(mission))histories.set(mission,createHistory());return histories.get(mission);}
 function snapshot(){return {circuit:structuredClone(circuit),inputs:{...inputs},hintCount,assisted};}
 function startingInputs(key){return Object.fromEntries(missions[key].inputs.map(k=>[k,key==="difference"&&k==="B"?1:0]));}
-function restore(next){circuit=structuredClone(next.circuit);inputs={...next.inputs};hintCount=next.hintCount;assisted=next.assisted;if(!circuit.gates.some(g=>g.id===selected))selected=circuit.gates[0]?.id??null;}
+function restore(next){importRequest++;circuit=structuredClone(next.circuit);inputs={...next.inputs};hintCount=next.hintCount;assisted=next.assisted;if(!circuit.gates.some(g=>g.id===selected))selected=circuit.gates[0]?.id??null;}
 function install(key,next){copyDraft(next,key);if(key!==mission)changeMission(key);history().push(snapshot());restore(next);render();}
 const meanings={AND:"두 입력이 모두 1일 때만 1입니다.",OR:"한 입력이라도 1이면 1입니다.",XOR:"두 입력이 서로 다를 때만 1입니다.",NOT:"입력의 0과 1을 뒤집습니다.",NAND:"AND의 결과를 뒤집습니다.",NOR:"OR의 결과를 뒤집습니다.",XNOR:"두 입력이 같을 때만 1입니다."};
 const investigations={
@@ -36,6 +37,7 @@ function changeMission(key,withExample=false){
   if(!Object.hasOwn(missions,key))throw new TypeError("Unknown mission");
   if(withExample){changeMission(key);const state=commit(example(key),{assisted:true,hintCount:0,inputs:Object.fromEntries(missions[key].inputs.map(k=>[k,0]))});$("#status").textContent="예시 회로 · 연습";return state;}
   if(key===mission)return summary();
+  importRequest++;
   const saved=drafts.get(key),next=saved?.circuit??initial(key);
   validate(next,key);
   drafts.set(mission,{circuit:structuredClone(circuit),inputs:{...inputs},selected,hintCount,assisted});
@@ -118,8 +120,23 @@ $("#saveLocal").addEventListener("click",()=>{const stored=readState();if(stored
 $("#loadLocal").addEventListener("click",()=>{const stored=readState();if(!stored.ok){$("#status").textContent="저장 데이터를 읽을 수 없습니다.";return;}const saved=stored.state.drafts[mission];if(!saved){$("#status").textContent="이 과제의 저장 회로가 없습니다.";return;}install(mission,saved);$("#status").textContent="저장 회로를 불러왔습니다.";});
 $("#eraseLocal").addEventListener("click",()=>{const erased=eraseState();if(erased)solved.clear();const cleared=erased&&clearProgress();render();$("#status").textContent=erased&&cleared?"저장 회로·완료 기록·갤러리 요약을 삭제했습니다.":"삭제 미완료 · 브라우저 저장 설정을 확인하세요.";});
 $("#exportCircuit").addEventListener("click",()=>{const text=exportCircuit(mission,circuit),url=URL.createObjectURL(new Blob([text],{type:"application/json"})),a=el("a",undefined,{href:url,download:"logic-foundry-"+mission+".json"});a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);$("#status").textContent="회로 JSON을 내보냈습니다.";});
-$("#importCircuit").addEventListener("change",async e=>{const file=e.target.files?.[0];if(!file)return;try{if(e.target.files.length!==1||file.size>FILE_BYTES)throw new TypeError("File limit");const loaded=importCircuit(await file.text());install(loaded.mission,{circuit:loaded.circuit,inputs:Object.fromEntries(missions[loaded.mission].inputs.map(k=>[k,0])),hintCount:0,assisted:true});$("#status").textContent="가져온 회로 · 연습";}catch{$("#status").textContent="가져오기 실패 · JSON 형식·과제·배선·16 KiB 제한을 확인하세요.";}finally{e.target.value="";}});
 $("#verify").addEventListener("click",verifyMission);
+$("#importCircuit").addEventListener("change",async e=>{
+  const request=++importRequest,file=e.target.files?.[0];
+  if(!file)return;
+  try{
+    if(e.target.files.length!==1||file.size>FILE_BYTES)throw new TypeError("File limit");
+    const text=await file.text();
+    if(request!==importRequest)return;
+    const loaded=importCircuit(text);
+    install(loaded.mission,{circuit:loaded.circuit,inputs:Object.fromEntries(missions[loaded.mission].inputs.map(k=>[k,0])),hintCount:0,assisted:true});
+    $("#status").textContent="가져온 회로 · 연습";
+  }catch{
+    if(request===importRequest)$("#status").textContent="가져오기 실패 · JSON 형식·과제·배선·16 KiB 제한을 확인하세요.";
+  }finally{
+    if(e.target.files?.[0]===file)e.target.value="";
+  }
+});
 $("#showHint").addEventListener("click",()=>{hintCount=Math.min(hintCount+1,missions[mission].hints.length);render();});
 $("#onlyFailures").addEventListener("change",render);
 $("#counterexample").addEventListener("click",()=>{const row=truthTable(circuit,mission).find(r=>!r.correct);if(row)applyInputs(row.inputs);});

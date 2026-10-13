@@ -1,5 +1,16 @@
 # Decisions
 
+## D13 — Edge input/lifecycle guards / 2026-10-13
+
+- Context: systematic test-first audit exposed obsolete or unintended UI events; original failing assertions are in edge-cases-20261013.md.
+- Options: block the whole editor while reading; unbounded queued imports; generation checks preserving synchronous edit controls.
+- Decision: Track import request generation; installation/restore and mission change invalidate pending reads. Ignore stale success/error and only clear the matching file selection.
+- Rationale: prevent a stale/unintended event from changing the current session while retaining normal input and existing pure model rules.
+- Affected files: dist/src/app.js, test/ui.test.js, test/edge.test.js, tools/edge-browser.cjs, docs/edge-cases-20261013.md and verification.md.
+- Data/policy: no schema/key/version/retention/achievement/rule change. No external service, paid change, identity, analytics or storage expansion.
+- Follow-up review: parent reviews integration, existing campaign solutions and actual captures; physical IME/touch and cross-tab races remain unverified. Browser-only fixtures are explicitly labeled; Node regression tests are included in existing CI commands. No commit/push/deploy by this owner.
+
+
 ## D11 — 초기 입력 복원과 삭제 실패 보존 / 2026-10-13
 
 - 맥락: 초기 회로 버튼이 이전 입력을 남겨 재시작 상태가 달랐고, 개인 기록 삭제 실패에도 요약만 지워졌습니다.

@@ -178,3 +178,62 @@ test("failed private erase preserves the durable completion and its gallery summ
   assert.deepEqual(read().solved,solved);
   assert.match($("status").textContent,/삭제 미완료/);
 });
+
+test("edge: latest file selection wins when an earlier read completes late",async()=>{
+  selectMission("difference");$("reset").fire("click");
+  const input=$("importCircuit");
+  let finishOld;
+  input.files=[{size:500,text:()=>new Promise(resolve=>{finishOld=resolve;})}];
+  const old=input.fire("change");
+  input.files=[{size:500,text:async()=>exportCircuit("adder",example("adder"))}];
+  await input.fire("change");
+  assert.equal(read().mission,"adder");
+  const latest=read(),status=$("status").textContent;
+  finishOld(exportCircuit("difference",example("difference")));
+  await old;
+  assert.deepEqual(read(),latest);
+  assert.equal($("status").textContent,status);
+});
+
+test("edge: failed file read preserves editor, inputs, undo history and durable records",async()=>{
+  selectMission("difference");$("reset").fire("click");edit({id:"G1",type:"XOR"});
+  $("inputSwitches").children[0].fire("click");
+  const before=read(),undo=$("undo").textContent,privateBefore=localData.get(STATE_KEY),sharedBefore=localData.get(PROGRESS_KEY);
+  $("importCircuit").files=[{size:100,text:async()=>{throw Error("fixture read failure");}}];
+  await $("importCircuit").fire("change");
+  assert.deepEqual(read(),before);assert.equal($("undo").textContent,undo);
+  assert.equal(localData.get(STATE_KEY),privateBefore);assert.equal(localData.get(PROGRESS_KEY),sharedBefore);
+  assert.match($("status").textContent,/가져오기 실패/);
+});
+
+test("edge: hints are bounded and never turn exhaustive failure into completion",()=>{
+  selectMission("nandMux");$("reset").fire("click");
+  const privateBefore=localData.get(STATE_KEY),sharedBefore=localData.get(PROGRESS_KEY);
+  for(let i=0;i<10;i++)$("showHint").fire("click");
+  assert.equal($("hintList").children.length,missions.nandMux.hints.length);
+  $("verify").fire("click");
+  assert.match($("status").textContent,/첫 반례/);
+  assert.equal(localData.get(STATE_KEY),privateBefore);assert.equal(localData.get(PROGRESS_KEY),sharedBefore);
+});
+
+test("edge: reset cancels pending import and its late error cannot overwrite reset status",async()=>{
+  selectMission("difference");$("reset").fire("click");
+  let rejectRead;
+  $("importCircuit").files=[{size:100,text:()=>new Promise((_,reject)=>{rejectRead=reject;})}];
+  const pending=$("importCircuit").fire("change");
+  $("reset").fire("click");
+  const before=read(),status=$("status").textContent;
+  rejectRead(Error("late fixture failure"));await pending;
+  assert.deepEqual(read(),before);assert.equal($("status").textContent,status);
+});
+
+test("edge: reset cancels a pending valid import instead of resurrecting assisted practice",async()=>{
+  selectMission("difference");$("reset").fire("click");
+  let resolveRead;
+  $("importCircuit").files=[{size:500,text:()=>new Promise(resolve=>{resolveRead=resolve;})}];
+  const pending=$("importCircuit").fire("change");
+  $("reset").fire("click");
+  const before=read();
+  resolveRead(exportCircuit("adder",example("adder")));await pending;
+  assert.deepEqual(read(),before);
+});
